@@ -1,0 +1,31 @@
+name: Deploy Plain HTML to AWS S3 via OIDC
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write # Required for requesting the JWT OIDC token
+  contents: read  # Required for checking out the repository code
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Notice: No Node.js installation or npm build steps here!
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::021891583883:role/GitHubActionsWorkFlowRule
+          aws-region: eu-west-3 # <-- Change this if your S3 bucket is in a different region
+          audience: sts.amazonaws.com
+
+      - name: Deploy Subfolder to S3
+        run: |
+          # Use '.' instead of './dist' to sync the root files directly
+          aws s3 sync . s3://equesolution-021891583883-eu-west-3-an/equesolution-landing-page-services-main/lessons --delete --exclude ".git*" --exclude ".github*"
